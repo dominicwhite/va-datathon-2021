@@ -1,0 +1,33 @@
+---
+title: "EDA example"
+output: pdf_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+library(tidyverse)
+library(sf)
+datathon_df <- readRDS("../data/datathon.rds")
+```
+
+## Example ggplot graph
+
+```{r}
+datathon_df %>%
+  ggplot() +
+  geom_point(aes(census_B08201_001, census_B08201_002)) +
+  labs(x = "Total households in county", y = "Households with no vehicles")
+```
+
+## Example choropleth map
+
+```{r}
+datathon_df %>%
+  mutate(
+    pct_no_vehicle = 100 * census_B08201_002 / census_B08201_001
+  ) %>%
+  ggplot() +
+  geom_sf(aes(fill = pct_no_vehicle)) +
+  labs(title = "% of households with no vehicle")
+```
+

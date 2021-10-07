@@ -1,0 +1,150 @@
+---
+title: "Untitled"
+output: pdf_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+library(tidyverse)
+library(tidycensus)
+
+usda_grocerystores <- read_csv("USDA_FoodEnvironmentAtlas_-_Access_and_Proximity_to_Grocery_Store.csv")
+usda_food_assistance <- read_csv("USDA_FoodEnvironmentAtlas_-_Food_Assistance.csv")
+usda_food_taxes <- read_csv("USDA_FoodEnvironmentAtlas_-_Food_Taxes.csv")
+usda_health  <- read_csv("USDA_FoodEnvironmentAtlas_-_Health_and_Physical_Activity.csv")
+usda_local_foods  <- read_csv("USDA_FoodEnvironmentAtlas_-_Local_Foods.csv")
+usda_restaurants  <- read_csv("USDA_FoodEnvironmentAtlas_-_Restaurant_Availability_and_Expenditures.csv")
+usda_socieconomic <- read_csv("USDA_FoodEnvironmentAtlas_-_Socioeconomic_Characteristics.csv")
+usda_store_availability <- read_csv("USDA_FoodEnvironmentAtlas_-_Store_Availability.csv")
+usda_supplemental <- read_csv("USDA_FoodEnvironmentAtlas_-_Supplemental_Data_-_County.csv")
+
+farmers_market_2019 <- read_csv("Virginia_Farmers_Market_Nutrition_Program__FMNP__2019.csv")
+farmers_market_2021 <- read_csv("Virginia_Farmers_Market_Nutrition_Program__FMNP__2021.csv")
+
+snap_participation_98_18 <- read_csv("Virginia_SNAP_Participation_1998-2018.csv")
+snap_participation_12_21 <- read_csv("Virginia_SNAP_Participation_and_Expenditures_2012-2021.csv")
+
+fb_blue_ridge <- read_csv("Federation_of_VA_Food_Banks_-_Blue_Ridge_Area_Food_Bank__BRAFB_.csv")
+fb_capital_area <- read_csv("Federation_of_VA_Food_Banks_-_Capital_Area_Food_Bank__CAFB_.csv")
+fb_peninsula <- read_csv("Federation_of_VA_Food_Banks_-_Virginia_Peninsula_Food_Bank__VPFB_.csv")
+fb_southwest <- read_csv("Federation_of_VA_Food_Banks_-_Feeding_Southwest_Virginia__FSWVA_.csv")
+fb_southeast <- read_csv("Federation_of_VA_Food_Banks_-_Food_Bank_of_Southeastern_Virginia__FBSEV_.csv")
+fb_fredericksburg <- read_csv("Federation_of_VA_Food_Banks_-_Fredericksburg_Regional_Food_Bank__FRFB_.csv")
+```
+
+```{r}
+va_usda <- usda_food_assistance %>%
+  full_join(usda_food_taxes) %>%
+  full_join(usda_grocerystores) %>%
+  full_join(usda_local_foods) %>%
+  full_join(usda_restaurants) %>%
+  full_join(usda_socieconomic) %>%
+  full_join(usda_store_availability) %>%
+  full_join(usda_supplemental) %>%
+  filter(State == "VA") %>%
+  arrange(FIPS)
+```
+
+```{r}
+v2019 <- load_variables(2019, "acs5", cache = TRUE)
+v2019_subject <- load_variables(2019, "acs5/subject", cache = TRUE)
+```
+
+
+```{r}
+options(tigris_use_cache = TRUE)
+
+vehic_vars <- c()
+for (i in 1:30){
+  vehic_vars[i] <- str_pad(i,3,pad="0")
+}
+vehic_vars <- str_c("B08201_", vehic_vars)
+
+va_vehicles_acs <- get_acs(state = "VA", geography = "county", 
+                  variables = vehic_vars, geometry = TRUE)
+```
+
+```{r}
+va_vehicles_wide <- va_vehicles_acs %>%
+  st_drop_geometry() %>%
+  select(-moe) %>%
+  pivot_wider(values_from = estimate, names_from = variable)
+
+# va_vehicles_wide_sf <- left_join(select(filter(va_vehicles_acs, variable == "B08201_001"), GEOID, geometry), va_vehicles_wide)
+```
+
+
+```{r}
+# poverty by age: 1-17
+poverty_vars <- c()
+for (i in 1:17){
+  poverty_vars[i] <- str_pad(i,3,pad="0")
+}
+poverty_vars <- str_c("B17020_", poverty_vars)
+va_poverty_acs <- get_acs(state = "VA", geography = "county", 
+                  variables = poverty_vars, geometry = FALSE)
+# SNAP subject table: 1-38
+snap_vars <- c()
+for (i in 1:38){
+  snap_vars[i] <- str_pad(i,3,pad="0")
+}
+snap_vars <- str_c("S2201_C01_", snap_vars)
+va_snap_acs <- get_acs(state = "VA", geography = "county", 
+                  variables = snap_vars, geometry = FALSE)
+
+```
+
+```{r}
+va_poverty_wide <- va_poverty_acs %>%
+  select(-moe, -NAME) %>%
+  pivot_wider(names_from = variable, values_from = estimate)
+
+va_snap_wide <- va_snap_acs %>%
+  select(-moe, -NAME) %>%
+  pivot_wider(names_from = variable, values_from = estimate)
+```
+
+```{r}
+va_acs_wide <- va_vehicles_wide %>%
+  full_join(va_poverty_wide) %>%
+  full_join(va_snap_wide) %>%
+  rename_with( ~ paste0("census_", .x)) %>%
+  rename(GEOID = census_GEOID)
+```
+
+```{r}
+va_acs_sf <- left_join(select(filter(va_vehicles_acs, variable == "B08201_001"), GEOID, geometry), va_acs_wide)
+```
+
+
+```{r}
+datathon_df <- full_join(va_acs_sf, va_usda, by = c("GEOID" = "FIPS")) %>% select(!State)
+```
+
+```{r}
+datathon_df %>%
+  group_by(GEOID) %>%
+  summarize(n = n()) %>%
+  arrange(desc(n))
+```
+
+```{r}
+saveRDS(datathon_df, "datathon.rds")
+```
+
+
+```{r}
+plot(datathon_df["FOOD_BANKS18"])
+```
+
+```{r}
+# data dictionary
+dict_snap <- v2019_subject %>%
+  filter(str_detect(name, "^S2201_C01"))
+dict_vehic <- v2019 %>%
+  filter(str_detect(name, "^B08201"))
+dict_poverty <- v2019 %>%
+  filter(str_detect(name, "^B17020_"))
+dict_acs <- bind_rows(dict_poverty, dict_snap, dict_vehic)
+```
+
