@@ -60,3 +60,19 @@ datathon_df %>%
   labs(title = "% of Virgina County Population that is on SNAP in 2017")
 ```
 Here is a graph of counties' population percentages that are on SNAP in 2017. The higher SNAP population percentages (around 30%) are located near the bottom or rural areas of Virginia while the lower SNAP population percentages are located at the top or urban areas of Virginia. This can be due to external factors such as lower income due to less high-level job availability in the south and less food accessibility due to less food banks present.
+
+```{r}
+datathon_df %>%
+  st_drop_geometry() %>%
+  select(census_NAME,FMRKT18)%>%
+  arrange(desc(FMRKT18))
+```
+```{r}
+datathon_df %>%
+  ggplot() +
+  geom_sf(aes(fill = FMRKT18)) +
+  labs(title = "Farmer Markets Present in Virginia in 2018")
+```
+Here is a map graph on # of Farmers Markets in Virginia counties that were present in 2018. The top/urban areas of Virginia are the ones that have the most farmers markets present (23 in Fairfax County being the highest number in one county). Food accessibility seems to be strongest for those living in the urban areas.
+
+
