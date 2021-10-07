@@ -88,7 +88,7 @@ snap_vars <- c()
 for (i in 1:38){
   snap_vars[i] <- str_pad(i,3,pad="0")
 }
-snap_vars <- str_c("S2201_C01_", snap_vars)
+snap_vars <- c(str_c("S2201_C01_", snap_vars), str_c("S2201_C03_", snap_vars), str_c("S2201_C04_", snap_vars))
 va_snap_acs <- get_acs(state = "VA", geography = "county", 
                   variables = snap_vars, geometry = FALSE)
 
@@ -140,7 +140,7 @@ plot(datathon_df["FOOD_BANKS18"])
 ```{r}
 # data dictionary
 dict_snap <- v2019_subject %>%
-  filter(str_detect(name, "^S2201_C01"))
+  filter(str_detect(name, "^S2201_C01") | str_detect(name, "^S2201_C03") | str_detect(name, "^S2201_C04"))
 dict_vehic <- v2019 %>%
   filter(str_detect(name, "^B08201"))
 dict_poverty <- v2019 %>%
