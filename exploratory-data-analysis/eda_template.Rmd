@@ -41,8 +41,22 @@ datathon_df %>%
 datathon_df %>%
   ggplot() +
   geom_sf(aes(fill = FOOD_BANKS18)) +
-  labs(title = "# of Food Banks")
+  labs(title = "# of Federation of Virginia Food Banks in 2018")
 ```
-Here is a graph that displays the amount of food banks in Virginia counties in the year 2018. Places highlighted and have food banks are Spotsylvania, Augusta, Hampton, Norfolk, Salem, and Richmond counties. 
+Here is a graph that displays the amount of food banks in Virginia counties that are part of the Federation of Virginia Food Banks in the year 2018. Places highlighted and have food banks are Spotsylvania, Augusta, Hampton, Norfolk, Salem, and Richmond counties. 
 
-We see here that the food banks are generally located around the center of Virginia rather than the perimeter. Overall, there is a very low number of food banks (maximum being 1 in each county) within Virginia in 2018.
+We see here that the food banks are generally located around the center of Virginia rather than the perimeter. Overall, there is a very low number of food banks (Federation of Virginia Food Banks) (maximum being 1 in each county) within Virginia in 2018.
+
+```{r}
+datathon_df %>%
+  st_drop_geometry() %>%
+  select(census_NAME, census_S2201_C04_001)%>%
+  arrange(desc(census_S2201_C04_001))
+```
+```{r}
+datathon_df %>%
+  ggplot() +
+  geom_sf(aes(fill = census_S2201_C04_001)) +
+  labs(title = "% of Virgina County Population that is on SNAP in 2017")
+```
+Here is a graph of counties' population percentages that are on SNAP in 2017. The higher SNAP population percentages (around 30%) are located near the bottom or rural areas of Virginia while the lower SNAP population percentages are located at the top or urban areas of Virginia. This can be due to external factors such as lower income due to less high-level job availability in the south and less food accessibility due to less food banks present.
