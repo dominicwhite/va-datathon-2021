@@ -30,7 +30,48 @@ fb_peninsula <- read_csv("Federation_of_VA_Food_Banks_-_Virginia_Peninsula_Food_
 fb_southwest <- read_csv("Federation_of_VA_Food_Banks_-_Feeding_Southwest_Virginia__FSWVA_.csv")
 fb_southeast <- read_csv("Federation_of_VA_Food_Banks_-_Food_Bank_of_Southeastern_Virginia__FBSEV_.csv")
 fb_fredericksburg <- read_csv("Federation_of_VA_Food_Banks_-_Fredericksburg_Regional_Food_Bank__FRFB_.csv")
+
 ```
+
+
+
+```{r}
+food_access_db <- read_csv(
+  "FoodAtlasDB.csv",
+  na = c("", "NA", "NULL")
+  )
+```
+
+```{r}
+virginia <- food_access_db %>%
+  filter(
+    State == "Virginia"
+  ) %>%
+  mutate(
+    county_fips = str_sub(CensusTract, 1, 5)
+  )
+```
+
+```{r}
+va_county_summaries <- virginia %>%
+  group_by(County) %>%
+  summarize(
+    GEOID = first(county_fips),
+    urban_tract_fraction = sum(Urban, na.rm=T)/n(),
+    OHU2010 = sum(OHU2010, na.rm=T),
+    lahunv1 = sum(lahunv1, na.rm=T),
+    lasnap1 = sum(lasnap1, na.rm=T),
+    lahunv10 = sum(lahunv10, na.rm=T),
+    lasnap10 = sum(lasnap10, na.rm=T),
+    lahunv20 = sum(lahunv20, na.rm=T),
+    lasnap20 = sum(lasnap20, na.rm=T),
+    TractHUNV = sum(TractHUNV, na.rm=T),
+    TractSNAP = sum(TractSNAP, na.rm=T)
+  )
+```
+
+
+
 
 ```{r}
 va_usda <- usda_food_assistance %>%
@@ -113,7 +154,13 @@ va_acs_wide <- va_vehicles_wide %>%
 ```
 
 ```{r}
-va_acs_sf <- left_join(select(filter(va_vehicles_acs, variable == "B08201_001"), GEOID, geometry), va_acs_wide)
+va_acs_sf <- left_join(
+  select(filter(va_vehicles_acs, variable == "B08201_001"), GEOID, geometry), 
+  va_acs_wide
+  ) %>%
+  left_join(
+    va_county_summaries
+  )
 ```
 
 
@@ -130,6 +177,7 @@ datathon_df %>%
 
 ```{r}
 saveRDS(datathon_df, "datathon.rds")
+saveRDS(datathon_df, "../exploratory-data-analysis/datathon.rds")
 ```
 
 
