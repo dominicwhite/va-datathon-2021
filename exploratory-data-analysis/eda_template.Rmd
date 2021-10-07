@@ -1,5 +1,5 @@
 ---
-title: "EDA example"
+title: "Food Bank Distribution"
 output: pdf_document
 ---
 
@@ -31,3 +31,18 @@ datathon_df %>%
   labs(title = "% of households with no vehicle")
 ```
 
+```{r}
+datathon_df %>%
+  st_drop_geometry() %>%
+  select(census_NAME,FOOD_BANKS18) %>%
+  arrange(desc(FOOD_BANKS18))
+```
+```{r}
+datathon_df %>%
+  ggplot() +
+  geom_sf(aes(fill = FOOD_BANKS18)) +
+  labs(title = "# of Food Banks")
+```
+Here is a graph that displays the amount of food banks in Virginia counties in the year 2018. Places highlighted and have food banks are Spotsylvania, Augusta, Hampton, Norfolk, Salem, and Richmond counties. 
+
+We see here that the food banks are generally located around the center of Virginia rather than the perimeter. Overall, there is a very low number of food banks (maximum being 1 in each county) within Virginia in 2018.
