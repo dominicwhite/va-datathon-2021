@@ -60,22 +60,29 @@ datathon_df %>%
   labs(title = "% of Virgina County Population that is on SNAP in 2017")
 ```
 Here is a graph of counties' population percentages that are on SNAP in 2017. The higher SNAP population percentages (around 30%) are located near the bottom or rural areas of Virginia while the lower SNAP population percentages are located at the top or urban areas of Virginia. This can be due to external factors such as lower income due to less high-level job availability in the south and less food accessibility due to less food banks present.
+
 ```{r}
 datathon_df %>%
   st_drop_geometry() %>%
-  select(census_NAME, census_S2201_C03_021)%>%
-  arrange(desc(census_S2201_C03_021))
+  select(census_NAME, census_S2201_C04_021)%>%
+  arrange(desc(census_S2201_C04_021))
 ```
-
 
 ```{r}
 datathon_df %>%
   ggplot() +
-  geom_sf(aes(fill = census_S2201_C03_021)) +
+  geom_sf(aes(fill = census_S2201_C04_021)) +
+  labs(title = "% of Virgina County Households (At or Below the Poverty Level) on SNAP (in the past 12 months)")
+```
+
+This graph is the % of households that are at or below the poverty level that is on SNAP in the past 12 months. We see here that the concentration of at or below poverty level households that are on SNAP is in the southern counties such as Norton, Alleghany, and Cumberland. Comparing this with the first graph, we can take the case study of Norton city. Roughly 78.2% of all 'at or below the poverty line' households make up for 30% of the entire county's population.
+```{r}
+datathon_df %>%
+  ggplot() +
+  geom_sf(aes(fill = census_S2201_C04_021)) +
   labs(title = "Virgina County Households (At or Below the Poverty Level) that is on SNAP in '17")
 ```
 
-This graph is the number of households that are at or below the poverty level that is on SNAP in 2017. We see here that the concentration of the most at or below poverty level households that are on SNAP is in Richmond will have higher number of households on SNAP who are also at or below the poverty level such as Richmond, Norfolk, and Fairfax.
 ```{r}
 datathon_df %>%
   st_drop_geometry() %>%
