@@ -76,25 +76,8 @@ datathon_df %>%
 ```
 
 This graph is the % of households that are at or below the poverty level that is on SNAP in the past 12 months. We see here that the concentration of at or below poverty level households that are on SNAP is in the southern counties such as Norton, Alleghany, and Cumberland. Comparing this with the first graph, we can take the case study of Norton city. Roughly 78.2% of all 'at or below the poverty line' households make up for 30% of the entire county's population.
-```{r}
-datathon_df %>%
-  ggplot() +
-  geom_sf(aes(fill = census_S2201_C04_021)) +
-  labs(title = "Virgina County Households (At or Below the Poverty Level) that is on SNAP in '17")
-```
 
-```{r}
-datathon_df %>%
-  st_drop_geometry() %>%
-  select(census_NAME,FMRKT18)%>%
-  arrange(desc(FMRKT18))
-```
-```{r}
-datathon_df %>%
-  ggplot() +
-  geom_sf(aes(fill = FMRKT18)) +
-  labs(title = "Farmer Markets Present in Virginia in 2018")
-```
-Here is a map graph on # of Farmers Markets in Virginia counties that were present in 2018. The top/urban areas of Virginia are the ones that have the most farmers markets present (23 in Fairfax County being the highest number in one county). Food accessibility seems to be strongest for those living in the urban areas.
+
+
 
 
