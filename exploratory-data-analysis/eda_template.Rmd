@@ -8,6 +8,7 @@ knitr::opts_chunk$set(echo = TRUE)
 library(tidyverse)
 library(sf)
 datathon_df <- readRDS("../data/datathon.rds")
+
 ```
 
 ## Example ggplot graph
@@ -77,7 +78,34 @@ datathon_df %>%
 
 This graph is the % of households that are at or below the poverty level that is on SNAP in the past 12 months. We see here that the concentration of at or below poverty level households that are on SNAP is in the southern counties such as Norton, Alleghany, and Cumberland. Comparing this with the first graph, we can take the case study of Norton city. Roughly 78.2% of all 'at or below the poverty line' households make up for 30% of the entire county's population.
 
+```{r}
+datathon_df %>%
+  ggplot() +
+  geom_sf(aes(fill = lasnap10)) +
+  labs(title = "Housing Units Recieving SNAP Benefits that are 10 or More Miles From a Supermarket)")
+```
 
-
-
-
+```{r}
+datathon_df %>%
+  ggplot() +
+geom_sf(aes(fill = SNAPS17)) +
+  labs(title = "SNAP stores")
+```
+```{r}
+datathon_df %>%
+  ggplot() +
+geom_sf(aes(fill = SNAPSPTH17)) +
+  labs(title = "SNAP stores per 1000 pop")
+```
+```{r}
+datathon_df %>%
+  ggplot() +
+geom_sf(aes(fill = PCH_SNAPSPTH_12_17)) +
+  labs(title = "Percent Change in SNAP stores per 1000 pop (2012-2017)")
+```
+```{r}
+datathon_df %>%
+  ggplot() +
+geom_sf(aes(fill = `PCH_SNAP_12_17*`)) +
+  labs(title = "Percent Change in SNAP Participants per 1000 pop (2012-2017)")
+```
