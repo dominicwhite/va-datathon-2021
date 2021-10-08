@@ -1,0 +1,153 @@
+---
+title: "EDA example"
+output: pdf_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+library(tidyverse)
+library(sf)
+datathon_df <- readRDS("../data/datathon.rds")
+```
+
+## Example ggplot graph
+
+```{r}
+datathon_df %>%
+  ggplot() +
+  geom_point(aes(census_B08201_001, census_B08201_002)) +
+  labs(x = "Total households in county", y = "Households with no vehicles")
+```
+
+## Example choropleth map
+
+```{r}
+datathon_df %>%
+  mutate(
+    Fraction_NOVECperHH= 100 * census_B08201_002 / census_B08201_001
+  ) %>%
+  ggplot() +
+  geom_sf(aes(fill = Fraction_NOVECperHH)) +
+  labs(title = "% of Households with no vehicle ")
+```
+
+##From those who don’t have availability to vehicle, which category is the most affected? (disabled?Female householders?those with no jobs?)
+
+```{r}
+DFSN <- datathon_df%>%
+  mutate(
+    Fraction_NOVECperHH= 100 * census_B08201_002 / census_B08201_001
+  ) %>%
+select(Fraction_NOVECperHH,census_S2201_C01_023,census_S2201_C01_019,census_S2201_C04_002,census_S2201_C01_036)%>% filter(Fraction_NOVECperHH >10) %>%
+  st_drop_geometry()
+```
+
+
+## rename the cols in DFSN
+```{r}
+Renamed_DFSN <- DFSN %>% rename(Percent_of_HH_with_no_Vehicle= Fraction_NOVECperHH,
+            Female_Householders =census_S2201_C01_019,
+          HH_with_one_or_more_Disability = census_S2201_C01_023,
+          HH_more_than_one_SNAP_user_and_Senior = census_S2201_C04_002,
+          HH_with_no_workers_within_last_year =census_S2201_C01_036)
+         
+         
+```
+## create corr matrix 
+```{r, fig.width=8, fig.height=8}
+##install.packages("corrplot")
+#library(corrplot)
+corrplot(cor(Renamed_DFSN),method="number")
+```
+
+
+##creating dataframe Frac_df
+```{r}
+Frac_df<-datathon_df %>% mutate(
+    Frac= 100 * census_B08201_002 / census_B08201_001
+  ) %>%
+  select(Frac, census_NAME, census_B08201_002 , census_B08201_001)
+```
+
+
+
+##create histogram
+```{r}
+Frac_df%>% 
+  ggplot()+
+  geom_histogram(mapping = aes(x = Frac),color ="blue")+
+  labs (
+    y = "% of HH with no Cars ",
+    x = "Households ",  
+    title = "Distribution of Total households with no vehicle availability")
+
+```
+##creating dataframe Frac_df
+```{r}
+Frac_dff <-datathon_df %>% mutate(
+    Frac_1car= 100 * census_B08201_003 / census_B08201_001
+  ) %>%
+  select(Frac_1car, census_NAME, census_B08201_002 , census_B08201_001)
+```
+
+##create histogram
+```{r}
+Frac_dff%>% 
+  ggplot()+
+  geom_histogram(mapping = aes(x = Frac_1car),color ="blue")+
+  labs (
+    y = "% of HH with 1 Car ",
+    x = "Households ",  
+    title = "Distribution of Total households with atleast 1 car")
+
+```
+
+```{r}
+datathon_df%>% 
+  ggplot()+
+  geom_histogram(mapping = aes(x =census_B08201_003),color ="blue",binwidth = 80)+labs (
+    y = "count ",
+    x = "Households with at least one vehicle",  
+    title = "Total households with Vehicle available")
+```
+## Frac --sorted 
+```{r}
+ datathon_df%>%
+  select(census_B08201_002  , census_S2201_C04_036)%>%
+   ggplot()+ geom_point(mapping=aes(x=census_B08201_002  ,y= census_S2201_C04_036))
+
+```
+
+
+```{r}
+cor_df <- datathon_df %>% select( census_B08201_002,census_B08201_001,census_S2201_C01_036, census_S2201_C01_037,census_S2201_C01_038)%>%
+st_drop_geometry()
+
+cor(cor_df, use = "complete.obs")
+
+```
+```{r}
+
+datathon_df %>%
+ 
+  ggplot() +
+    geom_point(mapping=aes(x = census_S2201_C01_036, y= census_B08201_002 ), alpha =0.1)+  
+  labs (
+    x = "HH (SNAP/Foodstamp receivers) in the past 12 months  Work status - no worker in the house ",
+    y = "No cars avialable",  
+    title = " correlation between Assistance receivers  work status and Vehicle avialablity "
+     )
+```
+
+```{r}
+
+datathon_df %>%
+ 
+  ggplot() +
+    geom_point(mapping=aes(x = census_S2201_C01_037, y= census_B08201_002 ), alpha =0.1)+  
+  labs (
+    x = "HH (SNAP/Foodstamp receivers) in the past 12 months  Work status - 1 worker in the house ",
+    y = "No cars avialable",  
+    title = " correlation between Assistance receivers  work status and Vehicle avialablity "
+     )
+```
