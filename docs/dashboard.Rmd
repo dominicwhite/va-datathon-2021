@@ -1,0 +1,365 @@
+---
+title: "Grocery Access"
+output: 
+  flexdashboard::flex_dashboard:
+    orientation: columns
+    vertical_layout: fill
+---
+
+```{r setup, include=FALSE}
+library(flexdashboard)
+library(tidyverse)
+library(sf)
+library(leaflet)
+library(plotly)
+
+df <- readRDS("../data/datathon.rds") %>%
+  mutate(
+    area_sq_meter = as.numeric(st_area(geometry)),
+    area_sq_miles = 0.00000038610215855 * area_sq_meter,
+    grocery_density = GROC16 / area_sq_miles,
+    snaps_density = SNAPS17 / area_sq_miles,
+    seniors_in_poverty = census_B17020_015 + census_B17020_016 + census_B17020_017,
+    senior_poverty_pctpop = seniors_in_poverty / census_B17020_001
+  )
+```
+
+# Overview
+
+Inputs {.sidebar}
+-------------------------------------
+
+**Team Peterson (21)**
+
+*Department of Computational and Data Sciences*
+
+*George Mason University*
+
+Team members:
+
+* Adjoa Dofour
+* Dominic White
+* Geda Gelana
+* Jessica Nguyen
+* Meti Gebre
+
+
+Column {data-width=650}
+-----------------------------------------------------------------------
+
+### The Last Mile Problem
+
+* 
+
+Column {data-width=350}
+-----------------------------------------------------------------------
+
+### Vehicles
+
+```{r}
+valueBox(
+  "6.1%",
+  caption = "Percentage of Virginia households without a vehicle", 
+  color = "primary"
+  )
+```
+
+### ...
+
+```{r}
+# df %>%
+#   st_drop_geometry() %>%
+#   summarize(
+#     mean(PCT_LACCESS_POP15, na.rm=TRUE),
+#     sum(LACCESS_POP15, na.rm=TRUE)
+#   )
+
+valueBox(
+  "17.9%",
+  caption = "Average percentage of Virginians in a country with low access to a store", 
+  color = "warning"
+  )
+```
+
+### ?
+
+```{r}
+valueBox(
+  "1,443,895",
+  caption = "Number of Virginians with low access to a store", 
+  color = "danger"
+  )
+```
+
+# Who has no car?
+
+Column {data-width=550}
+-----------------------------------------------------------------------
+
+<!-- ### ? -->
+
+<!-- ```{r} -->
+<!-- p <- df %>% -->
+<!--   ggplot(aes( -->
+<!--       x = POVRATE15, -->
+<!--       y = `PCT_LACCESS_HHNV15` -->
+<!--     )) + -->
+<!--   geom_point() + -->
+<!--   geom_smooth(method = "lm", se=F) + -->
+<!--   labs( -->
+<!--     x = "Poverty rate", -->
+<!--     y = "% households no vehicle and low access to store" -->
+<!--   ) -->
+<!-- ggplotly(p) -->
+<!-- ``` -->
+
+Column {data-width=450}
+-----------------------------------------------------------------------
+
+### Correlation between low access SNAP households and vehicle-less households
+
+```{r}
+p <- df %>%
+  ggplot(aes(
+      x = `census_S2201_C04_001`,
+      y = 100 * census_B08201_002 / census_B08201_001
+    )) +
+  geom_point() +
+  geom_smooth(method = "lm", se=F) +
+  labs(
+    x = "% SNAP households",
+    y = "% households with no vehicle"
+  )
+ggplotly(p)
+```
+
+
+
+# Where are stores?
+
+
+Column {data-width=700}
+-----------------------------------------------------------------------
+
+### Stores accepting SNAP per square mile
+
+```{r}
+# states <- geojsonio::geojson_read("json/us-states.geojson", what = "sp")
+
+bins <- c(0, 0.05, 0.1, 0.2, 0.6, 1, 2, 4, Inf)
+pal <- colorBin("YlOrRd", domain = df$snaps_density, bins = bins)
+
+labels <- sprintf(
+  "<strong>%s</strong><br/>%g stores / mi<sup>2</sup>",
+  df$census_NAME, df$snaps_density
+) %>% lapply(htmltools::HTML)
+
+leaflet(df) %>%
+  setView(-79.2, 37.5, 7) %>%
+  addProviderTiles("CartoDB.Positron") %>%
+  addPolygons(
+    fillColor = ~pal(snaps_density),
+    weight = 2,
+    opacity = 1,
+    color = "white",
+    dashArray = "3",
+    fillOpacity = 0.7,
+    highlightOptions = highlightOptions(
+      weight = 5,
+      color = "#666",
+      dashArray = "",
+      fillOpacity = 0.7,
+      bringToFront = TRUE),
+    label = labels,
+    labelOptions = labelOptions(
+      style = list("font-weight" = "normal", padding = "3px 8px"),
+      textsize = "15px",
+      direction = "auto")) %>%
+  addLegend(pal = pal, values = ~snaps_density, opacity = 0.7, title = NULL,
+    position = "topleft")
+```
+
+<!-- Column {data-width=300} -->
+<!-- ----------------------------------------------------------------------- -->
+
+<!-- ### ? -->
+
+<!-- ```{r} -->
+
+<!-- ``` -->
+
+<!-- ### ... -->
+
+<!-- ```{r} -->
+
+<!-- ``` -->
+
+
+
+
+# Where are food deserts?
+
+Column
+-----------------------------------------------------------------------
+
+### Number of SNAP households more than 10 miles from a store 
+
+```{r}
+bins <- c(0, 50, 100, 200, 300, 400, Inf)
+pal <- colorBin("YlOrRd", domain = df$lasnap10, bins = bins)
+
+labels <- sprintf(
+  "<strong>%s</strong><br/>%g households",
+  df$census_NAME, df$lasnap10
+) %>% lapply(htmltools::HTML)
+
+leaflet(df) %>%
+  setView(-79.2, 37.6, 6) %>%
+  addProviderTiles("CartoDB.Positron") %>%
+  addPolygons(
+    fillColor = ~pal(lasnap10),
+    weight = 2,
+    opacity = 1,
+    color = "white",
+    dashArray = "3",
+    fillOpacity = 0.7,
+    highlightOptions = highlightOptions(
+      weight = 5,
+      color = "#666",
+      dashArray = "",
+      fillOpacity = 0.7,
+      bringToFront = TRUE),
+    label = labels,
+    labelOptions = labelOptions(
+      style = list("font-weight" = "normal", padding = "3px 8px"),
+      textsize = "15px",
+      direction = "auto")) %>%
+  addLegend(pal = pal, values = ~lasnap10, opacity = 0.7, title = NULL,
+    position = "topleft")
+```
+
+Column
+-----------------------------------------------------------------------
+
+### Number of households without a vehicle more than 10 miles from a store 
+
+```{r}
+bins <- c(0, 25, 50, 75, 100, 200, 300, Inf)
+pal <- colorBin("YlOrRd", domain = df$lahunv10, bins = bins)
+
+labels <- sprintf(
+  "<strong>%s</strong><br/>%g households",
+  df$census_NAME, df$lahunv10
+) %>% lapply(htmltools::HTML)
+
+leaflet(df) %>%
+  setView(-79.2, 37.6, 6) %>%
+  addProviderTiles("CartoDB.Positron") %>%
+  addPolygons(
+    fillColor = ~pal(lahunv10),
+    weight = 2,
+    opacity = 1,
+    color = "white",
+    dashArray = "3",
+    fillOpacity = 0.7,
+    highlightOptions = highlightOptions(
+      weight = 5,
+      color = "#666",
+      dashArray = "",
+      fillOpacity = 0.7,
+      bringToFront = TRUE),
+    label = labels,
+    labelOptions = labelOptions(
+      style = list("font-weight" = "normal", padding = "3px 8px"),
+      textsize = "15px",
+      direction = "auto")) %>%
+  addLegend(pal = pal, values = ~lahunv10, opacity = 0.7, title = NULL,
+    position = "topleft")
+```
+
+
+
+# What about seniors?
+
+```{r}
+# library(tidycensus)
+# v19 <- tidycensus::load_variables(2019,"acs5")
+# poverty <- v19 %>%
+#   filter(str_starts(name, "B17020"))
+```
+
+
+```{r}
+# colnames(df)
+```
+
+
+Column
+-----------------------------------------------------------------------
+
+### Correlation between seniors on SNAP and low access SNAP participants
+
+```{r}
+p <- df %>%
+  ggplot(aes(
+    PCT_LACCESS_SENIORS15, PCT_LACCESS_SNAP15
+  )) + 
+  geom_point() +
+  geom_smooth(method="lm", se = F) +
+  labs(
+    x = "% of seniors on SNAP",
+    y = "% SNAP recipients with low access"
+  )
+ggplotly(p)
+```
+
+## Columns
+
+### Where are seniors with low access
+
+```{r}
+bins <- c(0, 100, 200, 300, 500, 1000, Inf)
+pal <- colorBin("YlOrRd", domain = df$LACCESS_SENIORS15, bins = bins)
+
+labels <- sprintf(
+  "<strong>%s</strong><br/>%g people",
+  df$census_NAME, df$LACCESS_SENIORS15
+) %>% lapply(htmltools::HTML)
+
+leaflet(df) %>%
+  setView(-79.2, 37.6, 6) %>%
+  addProviderTiles("CartoDB.Positron") %>%
+  addPolygons(
+    fillColor = ~pal(LACCESS_SENIORS15),
+    weight = 2,
+    opacity = 1,
+    color = "white",
+    dashArray = "3",
+    fillOpacity = 0.7,
+    highlightOptions = highlightOptions(
+      weight = 5,
+      color = "#666",
+      dashArray = "",
+      fillOpacity = 0.7,
+      bringToFront = TRUE),
+    label = labels,
+    labelOptions = labelOptions(
+      style = list("font-weight" = "normal", padding = "3px 8px"),
+      textsize = "15px",
+      direction = "auto")) %>%
+  addLegend(pal = pal, values = ~LACCESS_SENIORS15, opacity = 0.7, title = NULL,
+    position = "topleft")
+```
+
+# Solutions
+
+## Column
+
+### Possible policy solutions
+
+* Expand use of SNAP in online grocery shopping.
+
+* Incentivize delivery services to delivery to SNAP recipients at low/no cost.
+
+  * Target participents without vehicles, such as seniors.
+
